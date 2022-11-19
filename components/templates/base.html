@@ -25,7 +25,7 @@
 {% endif %}
 {% endwith %}
 
-<nav  class="navbar" style="background-color: #e3f2fd;z-index: 1;">
+<nav class="navbar" style="background-color: #e3f2fd;z-index: 1;">
     <div class="container-fluid">
         <a class="navbar-brand" href="#" style="font-size=">RETAILERS MARKETS</a>
         <button aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation"
@@ -34,18 +34,18 @@
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
-        <div class="collapse navbar-collapse" id="navbarNavAltMarkup" style="background-color: #e3f2fd;height:100px;">
-            <div class="navbar-nav">
-                <a aria-current="page" class="nav-link" href="{{url_for('dashboard_page')}}">Home</a>
-                <a class="nav-link" href="{{url_for('inventory_page')}}">Inventory</a>
-                <a class="nav-link" href="{{url_for('logs_page')}}">Logs</a>
-                <a class="nav-link" href="{{url_for('track_page')}}">Track</a>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup" style="background-color: #e3f2fd;height:100px;">
+        <div class="navbar-nav">
+            <a aria-current="page" class="nav-link" href="{{url_for('dashboard_page')}}">Home</a>
+            <a class="nav-link" href="{{url_for('inventory_page')}}">Inventory</a>
+            <a class="nav-link" href="{{url_for('logs_page')}}">Logs</a>
+            <a class="nav-link" href="{{url_for('track_page')}}">Track</a>
 
-                <button class="btn btn-primary" data-bs-target="#exampleModal" data-bs-toggle="modal" type="button">
-                    Logout
-                </button>
-            </div>
-<!--        </div>-->
+            <button class="btn btn-primary" data-bs-target="#exampleModal" data-bs-toggle="modal" type="button">
+                Logout
+            </button>
+        </div>
+        <!--        </div>-->
     </div>
 </nav>
 
@@ -87,6 +87,19 @@
 <script crossorigin="anonymous"
         integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
         src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    window.watsonAssistantChatOptions = {
+      integrationID: "6d1ce590-fde3-40b1-9f53-9934ea9dfa0a", // The ID of this integration.
+      region: "us-south", // The region your integration is hosted in.
+      serviceInstanceID: "87dfd7aa-1d37-4078-9fe7-a053a541dafa", // The ID of your service instance.
+      onLoad: function(instance) { instance.render(); }
+    };
+    setTimeout(function(){
+      const t=document.createElement('script');
+      t.src="https://web-chat.global.assistant.watson.appdomain.cloud/versions/" + (window.watsonAssistantChatOptions.clientVersion || 'latest') + "/WatsonAssistantChatEntry.js";
+      document.head.appendChild(t);
+    });
 
+</script>
 </body>
 </html>
