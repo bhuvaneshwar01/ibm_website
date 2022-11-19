@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}   Inventory   {% endblock %}
+{% block content %}
+<h1>Inventory</h1>
+
+<button class="btn btn-success" data-bs-target="#exampleModal" data-bs-toggle="modal" type="button">
+    + Add Item
+</button>
+    {%  for item in items   %}
+    <div class="card" style="padding:5 px;margin: 10px">
+        <h5 class="card-header">{{item.ITEM_NAME}}</h5>
+        <div class="card-body">
+            <h5 class="card-title">Available : {{item.AVAILABLE}}</h5>
+            <p class="card-text">Description : {{item.DESCRIPTION}}</p>
+            <p class="card-text">Total Stock : {{item.TOTAL_STOCK}}</p>
+            <p class="card-text">COST PER ITEM : {{item.COST_PER_ITEM}}</p>
+            <a class="btn btn-primary" href="#">Edit Total Stock</a>
+            <a href="{{url_for('delete_item_inventory_page',item_name= item.ITEM_NAME)}}" class="btn btn-danger">Delete</a>
+
+        </div>
+    </div>
+    {%  endfor  %}
+
+<!-- Modal -->
+<div aria-hidden="true" aria-labelledby="exampleModalLabel" class="modal fade" id="exampleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Add Items</h1>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <form class="form-register" method="POST">
+                    {{ form.hidden_tag() }}
+                    {{ form.Item_name.label() }}
+                    {{ form.Item_name(class="form-control", placeholder="Item name") }}
+
+                    {{ form.Description.label() }}
+                    {{ form.Description(class="form-control", placeholder="Description") }}
+
+                    {{ form.Available.label() }}
+                    {{ form.Available(class="form-control", placeholder="Available") }}
+
+                    {{ form.TotalStock.label() }}
+                    {{ form.TotalStock(class="form-control", placeholder="Total Stock") }}
+
+                    {{ form.CostPerItem.label() }}
+                    {{ form.CostPerItem(class="form-control", placeholder="Cost per Item") }}
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
