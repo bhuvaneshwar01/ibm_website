@@ -2,7 +2,8 @@ from components import app, conn, bcrypt, db2
 from flask import render_template, flash, request, url_for, redirect, session
 import ibm_db
 from components.form import Item
-
+import datetime
+import pytz
 
 @app.route("/")
 @app.route("/home", methods=['GET', 'POST'])
@@ -95,8 +96,19 @@ def register_page():
 
 @app.route('/dashboard')
 def dashboard_page():
-    if 'id' in session:
-        return render_template('dashboard.html')
+    if 'id' in session :
+        query = "SELECT * FROM JBG49873.ITEM WHERE USER_NAME != ?;"
+        prep_stmt = ibm_db.prepare(conn, query)
+        ibm_db.bind_param(prep_stmt, 1, session['username'])
+        ibm_db.execute(prep_stmt)
+        item = ibm_db.fetch_assoc(prep_stmt)
+        items = []
+
+        while (item):
+            items.append(item)
+            item = ibm_db.fetch_assoc(prep_stmt)
+
+        return render_template('dashboard.html',items=items)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -152,6 +164,7 @@ def delete_item_inventory_page(item_name):
 
 @app.route('/inventory', methods=['GET', 'POST'])
 def inventory_page():
+    global variable
     if 'id' in session:
         itemForm = Item()
         username = session['username']
@@ -201,7 +214,7 @@ def inventory_page():
             items.append(item)
             item = ibm_db.fetch_assoc(prep_stmt)
 
-        return render_template('inventory.html', form=itemForm, items=items)
+        return render_template('inventory.html', form=itemForm, items=items,variable=variable)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -258,5 +271,50 @@ def logout_page():
         return redirect(url_for('home_page'))
     else:
         flash(f'You are already logged out',
+              category='danger')
+        return redirect(url_for('home_page'))
+
+@app.route('/request/<item_name>', methods=['GET', 'POST'])
+def request_page(item_name):
+    if 'id' in session:
+        quantity = int(request.form['quantity'])
+
+        # check quantity
+        query = "SELECT TOTAL_STOCK,USER_NAME FROM JBG49873.ITEM WHERE ITEM.ITEM_NAME = ?;"
+        prep_stmt = ibm_db.prepare(conn, query)
+        ibm_db.bind_param(prep_stmt, 1, item_name)
+        ibm_db.execute(prep_stmt)
+        res = ibm_db.fetch_assoc(prep_stmt)
+        total_qnty = res['TOTAL_STOCK']
+        if int(total_qnty) >= quantity:
+            #   put into logs table
+            current_time = str(datetime.datetime.now(pytz.timezone('Asia/Kolkata')))
+            receiver_name = session['username']
+            supplier_name = res['USER_NAME']
+            status = "Request"
+            try:
+                query = "INSERT INTO JBG49873.LOG(TIMESTAMP,ITEM_NAME,RECEIVER_NAME,SUPPLIER_NAME, QUANTITY, STATUS) VALUES (?,?,?,?,?,?);"
+                prep_stmt = ibm_db.prepare(conn, query)
+                ibm_db.bind_param(prep_stmt, 1, current_time)
+                ibm_db.bind_param(prep_stmt, 2, item_name)
+                ibm_db.bind_param(prep_stmt, 3, receiver_name)
+                ibm_db.bind_param(prep_stmt, 4, supplier_name)
+                ibm_db.bind_param(prep_stmt, 5, quantity)
+                ibm_db.bind_param(prep_stmt, 6, status)
+                ibm_db.execute(prep_stmt)
+                flash("Your product request successfully!!", category='success')
+                return redirect(url_for('dashboard_page'))
+            except:
+                print(ibm_db.stmt_error(), "\n\n")
+                print("Error {}".format(ibm_db.stmt_errormsg()))
+
+                flash(f'Failure to request an item!!',
+                      category='danger')
+                return redirect(url_for('dashboard_page'))
+        else:
+            flash("No stock available", category='danger')
+            return redirect(url_for('dashboard_page'))
+    else:
+        flash(f'Cant logged into this page',
               category='danger')
         return redirect(url_for('home_page'))

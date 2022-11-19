@@ -2,4 +2,32 @@
 {% block title %}   Dashboard   {% endblock %}
 {% block content %}
 <h1>Dashboard</h1>
+<!--search product-->
+<form>
+    <input class="col-sm-7" placeholder="Type to search...">
+    <a href="#" class="btn btn-primary">Search</a>
+</form>
+
+{%  for item in items   %}
+<div class="card" style="padding:5 px;margin: 10px">
+    <h5 class="card-header">{{item.ITEM_NAME}}</h5>
+    <div class="card-body">
+        <p class="card-text">Description : {{item.DESCRIPTION}}</p>
+        <p class="card-text">Total Stock : {{item.TOTAL_STOCK}}</p>
+        <p class="card-text">Cost per item : {{item.COST_PER_ITEM}}</p>
+        <p class="card-text">Dealer's name: {{item.USER_NAME}}</p>
+        <form class="row row-cols-lg-auto g-3 align-items-center" action="{{url_for('request_page',item_name=item.ITEM_NAME)}}" method="post">
+            <div class="col-8">
+                <div class="input-group">
+                    <input class="form-control" name="quantity" placeholder="Quantity" type="Number">
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">Request</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{%  endfor  %}
+
 {% endblock %}
