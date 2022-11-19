@@ -14,7 +14,9 @@
             <p class="card-text">Description : {{item.DESCRIPTION}}</p>
             <p class="card-text">Total Stock : {{item.TOTAL_STOCK}}</p>
             <p class="card-text">COST PER ITEM : {{item.COST_PER_ITEM}}</p>
-            <a class="btn btn-primary" href="#">Edit Total Stock</a>
+            <button class="btn btn-primary" data-bs-target="#updateModal" data-bs-toggle="modal" type="button">Edit
+                Total Stock
+            </button>
             <a href="{{url_for('delete_item_inventory_page',item_name= item.ITEM_NAME)}}" class="btn btn-danger">Delete</a>
 
         </div>
@@ -53,6 +55,36 @@
                 {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
             </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!--Update Modal -->
+<div aria-hidden="true" aria-labelledby="updateModalLabel" class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="updateModalLabel">Update item</h1>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{url_for('update_item_inventory_page')}}" method="post">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" >Total Stock</span>
+                        <input aria-describedby="inputGroup-sizing-default" aria-label="Sizing example input" class="form-control"
+                               type="number" name="totalStock">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" >Item name</span>
+                        <input aria-describedby="inputGroup-sizing-default" aria-label="Sizing example input" class="form-control"
+                               type="text" name="item_name">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                <button class="btn btn-primary" type="submit">Save changes</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

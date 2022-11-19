@@ -1,5 +1,5 @@
-from components import app, conn, bcrypt,db2
-from flask import render_template, flash, request, url_for, redirect,session
+from components import app, conn, bcrypt, db2
+from flask import render_template, flash, request, url_for, redirect, session
 import ibm_db
 from components.form import Item
 
@@ -9,6 +9,7 @@ from components.form import Item
 def home_page():
     return render_template('home.html')
 
+
 @app.route("/login", methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
@@ -16,7 +17,7 @@ def login_page():
         password = request.form['user_password']
 
         query = "SELECT * FROM JBG49873.USER WHERE USER.USERNAME = ? LIMIT 1";
-        prep_stmt = ibm_db.prepare(conn,query)
+        prep_stmt = ibm_db.prepare(conn, query)
         ibm_db.bind_param(prep_stmt, 1, user_name)
         ibm_db.execute(prep_stmt)
         result_dict = ibm_db.fetch_assoc(prep_stmt)
@@ -24,7 +25,7 @@ def login_page():
             session['loggedin'] = True
             session['id'] = result_dict['USER_ID']
             session['username'] = result_dict['USERNAME']
-            flash(f'Log into the account successfully!!',category='success')
+            flash(f'Log into the account successfully!!', category='success')
             return redirect(url_for('dashboard_page'))
         else:
             flash(f'Username and/or password are incorrect to login!',
@@ -102,6 +103,30 @@ def dashboard_page():
         return redirect(url_for('home_page'))
 
 
+@app.route('/inventory/update', methods=['POST'])
+def update_item_inventory_page():
+    if 'id' in session:
+        try:
+            item_name = request.form['item_name']
+            totalStock = request.form['totalStock']
+            query = "UPDATE JBG49873.ITEM SET TOTAL_STOCK=?  WHERE ITEM.ITEM_NAME = ? AND ITEM.USER_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, totalStock)
+            ibm_db.bind_param(prep_stmt, 2, item_name)
+            ibm_db.bind_param(prep_stmt, 3, session['username'])
+            ibm_db.execute(prep_stmt)
+            flash(f'Item updated successfully!!',
+                  category='success')
+        except:
+            print(ibm_db.conn_errormsg(), "\n\n")
+            flash(f'Failure to update an item!!',
+                  category='danger')
+        return redirect(url_for('inventory_page'))
+    else:
+        flash(f'Cant see this page without login!!',
+              category='danger')
+        return redirect(url_for('home_page'))
+
 
 @app.route('/inventory/delete/<item_name>')
 def delete_item_inventory_page(item_name):
@@ -115,7 +140,7 @@ def delete_item_inventory_page(item_name):
             flash(f'Item deleted successfully!!',
                   category='success')
         except:
-            print(ibm_db.conn_errormsg(),"\n\n")
+            print(ibm_db.conn_errormsg(), "\n\n")
             flash(f'Failure to delete an item!!',
                   category='danger')
         return redirect(url_for('inventory_page'))
@@ -153,7 +178,7 @@ def inventory_page():
 
             else:
                 query = "INSERT INTO JBG49873.ITEM( ITEM_NAME,DESCRIPTION,AVAILABLE,TOTAL_STOCK,COST_PER_ITEM,USER_NAME) VALUES (?,?,?,?,?,?);"
-                prep_stmt = ibm_db.prepare(conn,query)
+                prep_stmt = ibm_db.prepare(conn, query)
                 ibm_db.bind_param(prep_stmt, 1, item_name)
                 ibm_db.bind_param(prep_stmt, 2, item_description)
                 ibm_db.bind_param(prep_stmt, 3, avail)
@@ -172,11 +197,11 @@ def inventory_page():
         item = ibm_db.fetch_assoc(prep_stmt)
         items = []
 
-        while(item):
+        while (item):
             items.append(item)
             item = ibm_db.fetch_assoc(prep_stmt)
 
-        return render_template('inventory.html',form=itemForm,items=items)
+        return render_template('inventory.html', form=itemForm, items=items)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -192,7 +217,6 @@ def logs_page():
         flash(f'Cant see this page without login!!',
               category='danger')
         return redirect(url_for('home_page'))
-
 
 
 @app.route('/track', methods=['GET', 'POST'])
@@ -228,10 +252,10 @@ def track_product_page():
 @app.route('/logout')
 def logout_page():
     if 'id' in session:
-            session.pop('id',None)
-            session.pop('username',None)
-            flash("You have been logged out!", category='success')
-            return redirect(url_for('home_page'))
+        session.pop('id', None)
+        session.pop('username', None)
+        flash("You have been logged out!", category='success')
+        return redirect(url_for('home_page'))
     else:
         flash(f'You are already logged out',
               category='danger')
