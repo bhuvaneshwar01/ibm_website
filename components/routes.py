@@ -5,6 +5,7 @@ from components.form import Item
 import datetime
 import pytz
 
+
 @app.route("/")
 @app.route("/home", methods=['GET', 'POST'])
 def home_page():
@@ -47,6 +48,10 @@ def register_page():
         email_id = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
+        address = request.form['Address']
+        city = request.form['City']
+        state = request.form['State']
+        pincode = request.form['pincode']
 
         # check username exist
         query = "SELECT COUNT(USERNAME) AS IS_PRESENT FROM JBG49873.USER WHERE USER.USERNAME = ?;"
@@ -89,6 +94,16 @@ def register_page():
             ibm_db.bind_param(prep_stmt, 4, email_id)
             ibm_db.bind_param(prep_stmt, 5, password_hash)
             ibm_db.execute(prep_stmt)
+
+            query = "INSERT INTO JBG49873.LOCATION(USER_NAME,ADDRESS,CITY,STATE,PINCODE) VALUES(?,?,?,?,?) ;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, user_name)
+            ibm_db.bind_param(prep_stmt, 2, address)
+            ibm_db.bind_param(prep_stmt, 3, city)
+            ibm_db.bind_param(prep_stmt, 4, state)
+            ibm_db.bind_param(prep_stmt, 5, pincode)
+            ibm_db.execute(prep_stmt)
+
             flash(f'Account created successfully!!',
                   category='success')
             return redirect(url_for('login_page'))
@@ -96,7 +111,7 @@ def register_page():
 
 @app.route('/dashboard')
 def dashboard_page():
-    if 'id' in session :
+    if 'id' in session:
         query = "SELECT * FROM JBG49873.ITEM WHERE USER_NAME != ?;"
         prep_stmt = ibm_db.prepare(conn, query)
         ibm_db.bind_param(prep_stmt, 1, session['username'])
@@ -108,7 +123,7 @@ def dashboard_page():
             items.append(item)
             item = ibm_db.fetch_assoc(prep_stmt)
 
-        return render_template('dashboard.html',items=items)
+        return render_template('dashboard.html', items=items)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -253,18 +268,20 @@ def logs_page():
             # ibm_db.bind_param(prep_stmt, 2, 'Request')
             ibm_db.execute(prep_stmt)
             res = ibm_db.fetch_assoc(prep_stmt)
-            s = res['ADDRESS'] + ' , ' + res['CITY'] + ' , ' + res['STATE']+ ' , ' + res['COUNTRY']+ ' , ' + res['PINCODE']
+            s = res['ADDRESS'] + ' , ' + res['CITY'] + ' , ' + res['STATE'] + ' , ' + res['COUNTRY'] + ' , ' + res[
+                'PINCODE']
             address.append(s)
 
         print(totalCost)
-        return render_template('logs.html',res=items,totalCost = totalCost,length=len(items),location = address)
+        return render_template('logs.html', res=items, totalCost=totalCost, length=len(items), location=address)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
         return redirect(url_for('home_page'))
 
+
 @app.route('/logs/approve/<timestamp>/<receiver_name>/<item_name>', methods=['GET', 'POST'])
-def logs_approval_page(timestamp,receiver_name,item_name):
+def logs_approval_page(timestamp, receiver_name, item_name):
     if 'id' in session:
         try:
             # update quantity in item table
@@ -311,8 +328,9 @@ def logs_approval_page(timestamp,receiver_name,item_name):
               category='danger')
         return redirect(url_for('home_page'))
 
+
 @app.route('/logs/denied/<timestamp>/<receiver_name>', methods=['GET', 'POST'])
-def logs_denied_page(timestamp,receiver_name):
+def logs_denied_page(timestamp, receiver_name):
     if 'id' in session:
         query = "UPDATE JBG49873.lOG SET STATUS='Approved'  WHERE TIMESTAMP = ? AND RECEIVER_NAME = ?;"
         prep_stmt = ibm_db.prepare(conn, query)
@@ -331,7 +349,33 @@ def logs_denied_page(timestamp,receiver_name):
 @app.route('/track', methods=['GET', 'POST'])
 def track_page():
     if 'id' in session:
-        return render_template('track.html')
+        query = "SELECT * FROM LOG WHERE RECEIVER_NAME = ?;"
+        prep_stmt = ibm_db.prepare(conn, query)
+        ibm_db.bind_param(prep_stmt, 1, session['username'])
+        ibm_db.execute(prep_stmt)
+        item = ibm_db.fetch_assoc(prep_stmt)
+        items = []
+
+        while (item):
+            items.append(item)
+            item = ibm_db.fetch_assoc(prep_stmt)
+
+        totalCost = []
+        address = []
+        sorted(items, key=lambda i: i['TIMESTAMP'])
+
+        for item in items:
+            query = "SELECT * FROM LOCATION WHERE USER_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, session['username'])
+            ibm_db.execute(prep_stmt)
+            res = ibm_db.fetch_assoc(prep_stmt)
+            s = res['ADDRESS'] + ' , ' + res['CITY'] + ' , ' + res['STATE'] + ' , ' + res['COUNTRY'] + ' , ' + res[
+                'PINCODE']
+            address.append(s)
+
+        print(totalCost)
+        return render_template('track.html', res=items, totalCost=totalCost, length=len(items), location=address)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -369,6 +413,7 @@ def logout_page():
         flash(f'You are already logged out',
               category='danger')
         return redirect(url_for('home_page'))
+
 
 @app.route('/request/<item_name>', methods=['GET', 'POST'])
 def request_page(item_name):
