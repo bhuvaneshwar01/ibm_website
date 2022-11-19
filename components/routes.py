@@ -214,7 +214,7 @@ def inventory_page():
             items.append(item)
             item = ibm_db.fetch_assoc(prep_stmt)
 
-        return render_template('inventory.html', form=itemForm, items=items,variable=variable)
+        return render_template('inventory.html', form=itemForm, items=items)
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
@@ -224,8 +224,104 @@ def inventory_page():
 @app.route('/logs', methods=['GET', 'POST'])
 def logs_page():
     if 'id' in session:
+        query = "SELECT * FROM LOG WHERE SUPPLIER_NAME = ? and STATUS =  'Request';"
+        prep_stmt = ibm_db.prepare(conn, query)
+        ibm_db.bind_param(prep_stmt, 1, session['username'])
+        ibm_db.execute(prep_stmt)
+        item = ibm_db.fetch_assoc(prep_stmt)
+        items = []
 
-        return render_template('logs.html')
+        while (item):
+            items.append(item)
+            item = ibm_db.fetch_assoc(prep_stmt)
+
+        totalCost = []
+        address = []
+
+        for item in items:
+            query = "SELECT COST_PER_ITEM FROM ITEM WHERE ITEM_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, item['ITEM_NAME'])
+            ibm_db.execute(prep_stmt)
+            res = ibm_db.fetch_assoc(prep_stmt)
+            cost = item['QUANTITY'] * int(res['COST_PER_ITEM'])
+            totalCost.append(cost)
+
+            query = "SELECT * FROM LOCATION WHERE USER_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, session['username'])
+            # ibm_db.bind_param(prep_stmt, 2, 'Request')
+            ibm_db.execute(prep_stmt)
+            res = ibm_db.fetch_assoc(prep_stmt)
+            s = res['ADDRESS'] + ' , ' + res['CITY'] + ' , ' + res['STATE']+ ' , ' + res['COUNTRY']+ ' , ' + res['PINCODE']
+            address.append(s)
+
+        print(totalCost)
+        return render_template('logs.html',res=items,totalCost = totalCost,length=len(items),location = address)
+    else:
+        flash(f'Cant see this page without login!!',
+              category='danger')
+        return redirect(url_for('home_page'))
+
+@app.route('/logs/approve/<timestamp>/<receiver_name>/<item_name>', methods=['GET', 'POST'])
+def logs_approval_page(timestamp,receiver_name,item_name):
+    if 'id' in session:
+        try:
+            # update quantity in item table
+            query = "SELECT TOTAL_STOCK FROM JBG49873.ITEM WHERE ITEM.ITEM_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, item_name)
+            ibm_db.execute(prep_stmt)
+            res = ibm_db.fetch_assoc(prep_stmt)
+            total_qnty = int(res['TOTAL_STOCK'])
+
+            query = "SELECT QUANTITY FROM JBG49873.LOG WHERE TIMESTAMP = ? AND RECEIVER_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, timestamp)
+            ibm_db.bind_param(prep_stmt, 2, receiver_name)
+            ibm_db.execute(prep_stmt)
+            res = ibm_db.fetch_assoc(prep_stmt)
+            qnty = int(res['QUANTITY'])
+
+            total_qnty = total_qnty - qnty
+
+            query = "UPDATE JBG49873.ITEM SET TOTAL_STOCK=?  WHERE ITEM.ITEM_NAME = ?;;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, total_qnty)
+            ibm_db.bind_param(prep_stmt, 2, item_name)
+            ibm_db.execute(prep_stmt)
+
+            query = "UPDATE JBG49873.LOG SET STATUS='Approved'  WHERE TIMESTAMP = ? AND RECEIVER_NAME = ?;"
+            prep_stmt = ibm_db.prepare(conn, query)
+            ibm_db.bind_param(prep_stmt, 1, timestamp)
+            ibm_db.bind_param(prep_stmt, 2, receiver_name)
+            ibm_db.execute(prep_stmt)
+
+            flash(f'updated successfuly!!',
+                  category='success')
+            return redirect(url_for('logs_page'))
+        except:
+            print(ibm_db.stmt_error(), "\n\n")
+            print("Error {}".format(ibm_db.stmt_errormsg()))
+            flash(f'Fail to update!!',
+                  category='danger')
+            return redirect(url_for('logs_page'))
+    else:
+        flash(f'Cant see this page without login!!',
+              category='danger')
+        return redirect(url_for('home_page'))
+
+@app.route('/logs/denied/<timestamp>/<receiver_name>', methods=['GET', 'POST'])
+def logs_denied_page(timestamp,receiver_name):
+    if 'id' in session:
+        query = "UPDATE JBG49873.lOG SET STATUS='Approved'  WHERE TIMESTAMP = ? AND RECEIVER_NAME = ?;"
+        prep_stmt = ibm_db.prepare(conn, query)
+        ibm_db.bind_param(prep_stmt, 1, timestamp)
+        ibm_db.bind_param(prep_stmt, 2, receiver_name)
+        ibm_db.execute(prep_stmt)
+        flash(f'updated successfuly!!',
+              category='success')
+        return redirect(url_for('logs_page'))
     else:
         flash(f'Cant see this page without login!!',
               category='danger')
